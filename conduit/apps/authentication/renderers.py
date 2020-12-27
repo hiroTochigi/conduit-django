@@ -1,10 +1,9 @@
-import json
 
-from rest_framework.renderers import JSONRenderer
+from conduit.apps.core.renderers import ConduitJSONRenderer
 
-
-class UserJSONRenderer(JSONRenderer):
+class UserJSONRenderer(ConduitJSONRenderer):
     charset = 'utf-8'
+    object_label = 'user'
 
     def render(self, data, media_type=None, renderer_context=None):
         # If we receive a `token` key as part of the response, it will be a
@@ -17,7 +16,6 @@ class UserJSONRenderer(JSONRenderer):
             # bytes.
             data['token'] = token.decode('utf-8')
 
-        # Finally, we can render our data under the "user" namespace.
-        return json.dumps({
-            'user': data
-        })
+        # Without this, the renderer cannot return anything
+        # Because override the render method
+        return super(UserJSONRenderer, self).render(data)

@@ -136,4 +136,7 @@ AUTH_USER_MODEL = 'authentication.User'
 REST_FRAMEWORK = {
     'EXCEPTION_HANDLER': 'conduit.apps.core.exceptions.core_exceptionhandler',
     'NON_FIELD_ERROR_KEY': 'error',
+    'DEFAULT_AUTHENTICATION_CLASSES':(
+       'conduit.apps.authentication.backends.JWTAuthentication',
+    ),
 }
