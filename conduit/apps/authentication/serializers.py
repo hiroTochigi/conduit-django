@@ -2,7 +2,7 @@ from rest_framework import serializers
 from django.contrib.auth import authenticate
 
 from .models import User
-
+from conduit.apps.profiles.serializers import ProfileSerializer
 
 class RegistrationSerializer(serializers.ModelSerializer):
     """Serializers registration requests and creates a new user."""
@@ -84,9 +84,22 @@ class UserSerializer(serializers.ModelSerializer):
         read_only = True
     )
 
+    # When a field should be handled as a serializer, we must explicitly say
+    # so. Moreover, `UserSerializer` should never expose profile information,
+    # so we set `write_only=True`.
+    profile = ProfileSerializer(write_only=True)
+
+    # We want to get the `bio` and `image` fields from the related Profile
+    # model.
+    bio = serializers.CharField(source='profile.bio', read_only=True)
+    image = serializers.CharField(source='profile.image', read_only=True)
+
     class Meta:
         model = User
-        fields = ("email", "username", "password", "token",)
+        fields = (
+            "email", "username", "password", "token",
+            "profile", "bio", "image", 
+        )
 
         # The `read_only_fields` option is an alternative for explicitly
         # specifying the field with `read_only=True` like we did for password
@@ -103,6 +116,10 @@ class UserSerializer(serializers.ModelSerializer):
         # without deleting password, password is stored as 
         # usual variable
         password = validated_data.pop("password", None)
+        
+        # profile is separated table, so we do not want to
+        # include profile data when updating user table
+        profile_data = validated_data.pop("profile", {})
 
         for key, value in validated_data.items():
 
@@ -113,6 +130,12 @@ class UserSerializer(serializers.ModelSerializer):
         if password is not None:
             instance.set_password(password)
 
+        # Update User model(table)
         instance.save()
+
+        # Update profile model(table)
+        for key, value in profile_data.items():
+            setattr(instance.profile, key, value)
+        instance.profile.save()
 
         return instance

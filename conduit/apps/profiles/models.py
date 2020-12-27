@@ -12,7 +12,7 @@ class Profile(TimestampedModel):
     # automatically. 
     # This deletion is realized by on_delete=models.CASCADE
     user = models.OneToOneField(
-        'authentication.User', 
+        'authentication.User',
         on_delete=models.CASCADE
     )
 

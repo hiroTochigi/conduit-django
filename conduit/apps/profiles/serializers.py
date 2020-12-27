@@ -1,3 +1,10 @@
+"""
+Serializer 
+JSON object -> Python object
+Then model can deal with the client request
+Meta class define how model deal with the each data field
+"""
+
 # Need to have serializers to make custome serializers
 from rest_framework import serializers
 
@@ -6,10 +13,10 @@ from .models import Profile
 
 class ProfileSerializer(serializers.ModelSerializer):
 
-    # username -> user User.username
-    username = serializers.CharField(source=User.username)
+    # username -> user user.username
+    username = serializers.CharField(source='user.username')
     # bio
-    bio = serializer.CharField(allow_blank=True)
+    bio = serializers.CharField(allow_blank=True)
 
     # store image url 
     # serializers.SerializerMethodField() calls get_image method
@@ -19,10 +26,10 @@ class ProfileSerializer(serializers.ModelSerializer):
     class Meta:
         # Use model profile
         model = Profile
-        fields = (username, bio, image,)
+        fields = ('username', 'bio', 'image',)
 
         # Not change user name at profile apps -> read only
-        read_only_fields = (username,)
+        read_only_fields = ('username',)
 
     # define get_image method
     # if image is found, user the image url

@@ -6,6 +6,7 @@ from rest_framework.response import Response
 from .models import Profile
 from .renderers import ProfileJSONRenderer
 from .serializers import ProfileSerializer
+from .exceptions import ProfileDoesNotExist
 
 # Use RetrieveAPIView as the base class
 class ProfileRetrieveAPIView(RetrieveAPIView):
@@ -21,7 +22,7 @@ class ProfileRetrieveAPIView(RetrieveAPIView):
     # Override retrieve method
     # Try to retrieve the requested profile and throw an exception if the
     # profile could not be found.
-    def retrieve(self, request):
+    def retrieve(self, request, username, *args, **kwargs):
         # We use the `select_related` method to avoid making unnecessary
         # database calls.
         # user__username 
@@ -29,11 +30,11 @@ class ProfileRetrieveAPIView(RetrieveAPIView):
         # -> username is field of user
 
         try:
-            profile = Profile.objects.selected_related('user').get(
-                user__username=request.user
+            profile = Profile.objects.select_related('user').get(
+                user__username=username
                 )
         except Profile.DoesNotExist:
-            raise
+            raise ProfileDoesNotExist
 
         serializer = self.serializer_class(profile)
 
@@ -41,12 +42,12 @@ class ProfileRetrieveAPIView(RetrieveAPIView):
 
 
 # View flow (RetrieveAPIView)
-# Recieve request
-# Retrieve data from database by the keyword from request (Client)
-# Check out whether the request can retrieve data or not
-# If data is not found -> RetrieveAPIView raise exception DoesNotExist
-# If found the data -> serialize the data (Python object)
-# Return the data with status, get request usually 200
+# Receive request
+# 1. Retrieve data from database by the keyword from request (Client)
+# 2. Check out whether the request can retrieve data or not
+# 3. If data is not found -> RetrieveAPIView raise exception DoesNotExist
+#    If found the data -> serialize the data (Python object)
+# 4. Return the data with status, get request usually 200
 
 
 

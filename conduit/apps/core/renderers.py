@@ -20,3 +20,6 @@ class ConduitJSONRenderer(JSONRenderer):
         return json.dumps({
             self.object_label: data
         })
+
+    # json.dumps
+    # Python object -> JSON Formatted Strings

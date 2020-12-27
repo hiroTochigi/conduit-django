@@ -62,7 +62,16 @@ class UserRetrieveUpdateAPIView(RetrieveUpdateAPIView):
     def update(self, request, *args, **kargs):
 
         # This is user's input data
-        serializer_data = request.data.get('user', {})
+        user_data = request.data.get('user', {})
+
+        serializer_data = {
+            'username': user_data.get('username', request.user.username),
+            'email': user_data.get('email', request.user.email),
+            'profile':{
+                'bio': user_data.get('bio', request.user.profile.bio),
+                'image': user_data.get('image', request.user.profile.image),
+            }
+        }
 
         # request.user is the current user which is log in
         # the current user data is about to be updated by user input
