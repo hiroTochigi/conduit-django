@@ -2,11 +2,11 @@ from rest_framework import status
 from rest_framework.generics import RetrieveAPIView
 from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
+from rest_framework.exceptions import NotFound
 
 from .models import Profile
 from .renderers import ProfileJSONRenderer
 from .serializers import ProfileSerializer
-from .exceptions import ProfileDoesNotExist
 
 # Use RetrieveAPIView as the base class
 class ProfileRetrieveAPIView(RetrieveAPIView):
@@ -18,6 +18,8 @@ class ProfileRetrieveAPIView(RetrieveAPIView):
     permission_classes = (AllowAny,)
     renderer_classes = (ProfileJSONRenderer,)
     serializer_class = ProfileSerializer
+    # I am not sure what is going on but it should have two table?
+    queryset = Profile.objects.select_related('user')
 
     # Override retrieve method
     # Try to retrieve the requested profile and throw an exception if the
@@ -30,11 +32,12 @@ class ProfileRetrieveAPIView(RetrieveAPIView):
         # -> username is field of user
 
         try:
-            profile = Profile.objects.select_related('user').get(
-                user__username=username
-                )
+            # select * from profile
+            # join user on profile.username = user.username
+            # where user.username = username
+            profile = self.queryset.get(user__username=username)
         except Profile.DoesNotExist:
-            raise ProfileDoesNotExist
+            raise NotFound('A profile with this username does not exist.')
 
         serializer = self.serializer_class(profile)
 
@@ -48,7 +51,3 @@ class ProfileRetrieveAPIView(RetrieveAPIView):
 # 3. If data is not found -> RetrieveAPIView raise exception DoesNotExist
 #    If found the data -> serialize the data (Python object)
 # 4. Return the data with status, get request usually 200
-
-
-
-

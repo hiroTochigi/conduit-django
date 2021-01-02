@@ -12,8 +12,8 @@ def core_exceptionhandler(exc, context):
 
     response = exception_handler(exc, context)
     handlers = {
+        'NotFound': _handle_not_found_error,
         "ValidationError": _handle_generic_error,
-        "ProfileDoesNotExist": _handle_generic_error,
     }
 
     # Get exception class name
@@ -29,4 +29,24 @@ def _handle_generic_error(exc, context, response):
     response.data = {
         "error": response.data
     }
+    return response
+
+def _handle_not_found_error(exc, context, response):
+    view = context.get('view', None)
+
+    # the view must have specified a queryset property
+    # ArticleViewSet should have queryset
+    # Because we set up the queryset
+    if view and getattr(view, 'queryset') is not None and view.queryset is not None:
+        error_key = view.queryset.model._meta.verbose_name
+
+        response.data = {
+            'errors': {
+                error_key: response.data['detail']
+            }
+        }
+
+    else:
+        response = _handle_generic_error(exc, context, response)
+
     return response
