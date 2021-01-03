@@ -10,7 +10,7 @@ from rest_framework import serializers
 
 from conduit.apps.profiles.serializers import ProfileSerializer
 # Use model profile
-from .models import Article
+from .models import Article, Comment
 
 class ArticleSerializer(serializers.ModelSerializer):
 
@@ -66,3 +66,39 @@ class ArticleSerializer(serializers.ModelSerializer):
         return instance.updated_at.isoformat()
 
     
+class CommentSerializer(serializers.ModelSerializer):
+
+    author = ProfileSerializer(read_only=True)
+    body = serializers.CharField() 
+
+    # Why this is not needed?
+    #article = ArticleSerializer(read_only=True)
+
+    # Call get_[~~~]_at 
+    createdAt = serializers.SerializerMethodField(method_name='get_created_at')
+    updatedAt = serializers.SerializerMethodField(method_name='get_updated_at')
+
+    class Meta:
+        model = Comment 
+        # Why id is here and article is not in the fields?
+        fields = (
+            'id',
+            'body',
+            'author',
+            'createdAt',
+            'updatedAt',
+        )
+
+    def create(self, validated_data):
+
+        # Where context fame from?
+        author = self.context.get('author', None)
+        article = self.context.get('article', None)
+
+        return Comment.objects.create(author=author, article=article, **validated_data)
+    
+    def get_created_at(self, instance):
+        return instance.created_at.isoformat()
+
+    def get_updated_at(self, instance):
+        return instance.updated_at.isoformat()

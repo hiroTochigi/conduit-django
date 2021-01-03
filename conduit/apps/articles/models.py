@@ -29,3 +29,18 @@ class Article(TimestampedModel):
 
     def __str__(self):
         return self.title 
+
+class Comment(TimestampedModel):
+    # make body, article, and author field
+    # body is text field
+    # article and author is one to many field
+
+    body = models.TextField()
+
+    author = models.ForeignKey(
+        'profiles.Profile', on_delete=models.CASCADE, related_name='comments'
+    ) 
+
+    article = models.ForeignKey(
+        'articles.Article', on_delete=models.CASCADE, related_name='comments'
+    ) 
