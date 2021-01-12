@@ -10,7 +10,8 @@ from rest_framework import serializers
 
 from conduit.apps.profiles.serializers import ProfileSerializer
 # Use model profile
-from .models import Article, Comment
+from .models import Article, Comment, Tag
+from .relations import TagRelatedField
 
 class ArticleSerializer(serializers.ModelSerializer):
 
@@ -31,6 +32,15 @@ class ArticleSerializer(serializers.ModelSerializer):
     # Therefore use CharField with required=False
     description = serializers.CharField(required=False) 
     body = serializers.CharField(required=False) 
+    
+    favorited = serializers.SerializerMethodField()
+    favoritedCount = serializers.SerializerMethodField(
+        method_name='get_favorited_count'
+    )
+
+    tagList = TagRelatedField(many=True, required=False, source='tags')
+    print("tagList")
+    print(tagList)
 
     # Call get_[~~~]_at 
     createdAt = serializers.SerializerMethodField(method_name='get_created_at')
@@ -44,6 +54,9 @@ class ArticleSerializer(serializers.ModelSerializer):
             'title',
             'description',
             'body',
+            'favorited',
+            'favoritedCount',
+            'tagList',
             'author',
             'createdAt',
             'updatedAt',
@@ -53,10 +66,20 @@ class ArticleSerializer(serializers.ModelSerializer):
     # What is the context of serializers.ModelSerializer?
     def create(self, validated_data):
 
+        print("validated_data")
+        print(validated_data)
         # Where context fame from?
         author = self.context.get('author', None)
 
-        return Article.objects.create(author=author, **validated_data)
+        # Why have to use pop instead get
+        tags = self.validated_data.pop('tags', [])
+        # tags = self.validated_data.get('tags', [])
+        article = Article.objects.create(author=author, **validated_data)
+
+        for tag in tags:
+            article.tags.add(tag)
+
+        return article 
 
     # Why created_at? the variable came from client like this?
     def get_created_at(self, instance):
@@ -65,6 +88,24 @@ class ArticleSerializer(serializers.ModelSerializer):
     def get_updated_at(self, instance):
         return instance.updated_at.isoformat()
 
+    def get_favorited(self, instance):
+        request = self.context.get('request', None)
+
+        if request is None:
+            return False
+
+        if not request.user.is_authenticated:
+            return False
+
+        # check out the client already favorite an article or not
+        return request.user.profile.has_favorited(instance)
+    
+    # Check out how many favorite has the article
+    # It look at the instance favorited_by table 
+    # (It is the intermiddle table connect to profile and article 
+    # ManyToMany relationship) 
+    def get_favorited_count(self, instance):
+        return instance.favorited_by.count()
     
 class CommentSerializer(serializers.ModelSerializer):
 
@@ -102,3 +143,16 @@ class CommentSerializer(serializers.ModelSerializer):
 
     def get_updated_at(self, instance):
         return instance.updated_at.isoformat()
+
+class TagSerializer(serializers.ModelSerializer):
+
+    class Meta:
+        model = Tag
+        fields = ('tag',)
+
+    def to_representation(self, obj):
+        return obj.tag
+
+    
+
+        

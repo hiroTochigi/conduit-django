@@ -21,12 +21,13 @@ class ProfileSerializer(serializers.ModelSerializer):
     # store image url 
     # serializers.SerializerMethodField() calls get_image method
     # because this serializers.SerializerMethodField() gives value to image variable
-    image = serializers.SerializerMethodField()
+    image = serializers.CharField(allow_blank=True, required=False)
+    following = serializers.SerializerMethodField()
 
     class Meta:
         # Use model profile
         model = Profile
-        fields = ('username', 'bio', 'image',)
+        fields = ('username', 'bio', 'image', 'following',)
 
         # Not change user name at profile apps -> read only
         read_only_fields = ('username',)
@@ -47,4 +48,24 @@ class ProfileSerializer(serializers.ModelSerializer):
             return obj.image
         return 'https://static.productionready.io/images/smiley-cyrus.jpg' 
 
-    
+    def get_following(self, instance): 
+        """
+        Check the user follow someone or not
+        """
+
+        request = self.context.get('request', None)
+
+        if request is None:
+            return False
+
+        if not request.user.is_authenticated:
+            return False
+
+        follower = request.user.profile
+        followee = instance
+
+        return follower.is_following(followee)
+
+
+
+        
