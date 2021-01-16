@@ -1,13 +1,13 @@
 import json
 
 from rest_framework.renderers import JSONRenderer
-from rest_framework.utils.serializer_helpers import ReturnList
 
 
 class ConduitJSONRenderer(JSONRenderer):
     charset = 'utf-8'
     object_label = 'object'
-    object_label_plural = 'objects'
+    pagination_object_label = 'objects'
+    pagination_count_label = 'count'
 
     # When it retrieve all data, JSONRenderer return ReturnList
     # If data is instance of ReturnList -> render it 
@@ -15,21 +15,19 @@ class ConduitJSONRenderer(JSONRenderer):
     # slug -> data is ReturnDict 
     # all -> data is ReturnList
     def render(self, data, media_type=None, renderer_context=None):
-        if isinstance(data, ReturnList):
-            _data = json.loads(
-                super(ConduitJSONRenderer, self).render(data).decode('utf-8')
-            )
+        
+        if data.get('result', None) is not None:
 
             return json.dumps({
-                self.object_label_plural: _data
+                self.pagination_object_label:data['result'],
+                self.pagination_count_label:data['count']
             })
-        else:
-            errors = data.get('error', None)
-            if errors is not None:
-                # As mentioned above, we will let the default JSONRenderer handle
-                # rendering errors.
-                return super(ConduitJSONRenderer, self).render(data)
+        elif data.get('error', None) is not None:
+            # As mentioned above, we will let the default JSONRenderer handle
+            # rendering errors.
+            return super(ConduitJSONRenderer, self).render(data)
 
+        else:
             # Finally, we can render our data under the "user" namespace.
             return json.dumps({
                 self.object_label: data
